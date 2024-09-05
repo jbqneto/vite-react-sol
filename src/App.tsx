@@ -1,9 +1,7 @@
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import {
-  WalletDisconnectButton,
-  WalletModalProvider,
-  WalletMultiButton
+  WalletModalProvider
 } from '@solana/wallet-adapter-react-ui';
 import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -13,9 +11,21 @@ import './App.css';
 import { LayoutComponent } from './components/layout/layout';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
+import 'primeicons/primeicons.css';
+import "primereact/resources/themes/bootstrap4-dark-blue/theme.css";
+import { Config } from './configuration/config';
+import { DevConfig } from './configuration/config.dev';
+import { ProdConfig } from './configuration/config.prod';
 
 function App() {
   const network = WalletAdapterNetwork.Devnet;
+  let config: Config;
+
+  if (import.meta.env.PROD) {
+    config = new ProdConfig();
+  } else {
+    config = new DevConfig();
+  }
 
   // You can also provide a custom RPC endpoint.
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
@@ -45,9 +55,7 @@ function App() {
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
           <WalletModalProvider>
-            <WalletMultiButton />
-            <WalletDisconnectButton />
-            <LayoutComponent></LayoutComponent>
+            <LayoutComponent config={config}></LayoutComponent>
           </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>

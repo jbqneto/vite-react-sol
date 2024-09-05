@@ -8,11 +8,6 @@
   text-align: center;
 }
 
-.content {
-  width: 100%;
-  display: flex;
-}
-
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);

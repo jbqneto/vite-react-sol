@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+*.prod
+managed_context
+test_suite_analysis
 
 # Editor directories and files
 .vscode/*

@@ -1,24 +1,55 @@
-import { Button } from 'primereact/button';
-import { sendSol } from '../../services/send-sol';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
+import { useEffect } from 'react';
+import { Config } from '../../configuration/config';
+import { SolanaService } from '../../services/solana.service';
+import { DialogMessage } from '../dialog-message/dialog-message';
 import { HeaderMenu } from "../header-menu/header-menu";
+import { Loading } from '../loading/loading';
+import './layout.scss';
 
-export function LayoutComponent() {
+type Input = {
+    config: Config;
+}
 
-    function handleSendSol(evt: any): void {
-        evt.preventDefault();
+export function LayoutComponent({ config }: Input) {
+    const { publicKey } = useWallet();
 
-        sendSol(1).then((data) => {
-            console.log("ok > ", data);
-        }).catch((err) => console.error(err));
+    const solService = new SolanaService(config);
+
+    const getTokensBalance = async (pubKey: PublicKey) => {
+        console.log("wallet tokens", publicKey?.toBase58());
+        const info = await solService.getAccountInfo(pubKey);
+
+        console.log("info: ", info);
+
+        const sol = await solService.getSolBalance(pubKey);
+
+        console.log("SOL: " + sol);
     }
+
+    useEffect(() => {
+
+    }, [])
+
+    useEffect(() => {
+        if (!publicKey) return;
+
+        if (publicKey) {
+            getTokensBalance(publicKey).catch((err) => console.error(err));
+        }
+
+    }, [publicKey])
 
     return (
         <div className="content">
-            <HeaderMenu></HeaderMenu>
+            {config && <HeaderMenu config={config} ></HeaderMenu>}
             <main>
-                <Button onClick={handleSendSol} label="Send sol" />
+                this is the main
             </main>
             <footer></footer>
+            <DialogMessage />
+            <Loading />
         </div>
     )
 }
