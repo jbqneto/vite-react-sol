@@ -1,8 +1,9 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Config } from '../../configuration/config';
 import { SolanaService } from '../../services/solana.service';
+import { DialogForm } from '../dialog-form/dialog-form';
 import { DialogMessage } from '../dialog-message/dialog-message';
 import { HeaderMenu } from "../header-menu/header-menu";
 import { Loading } from '../loading/loading';
@@ -12,7 +13,13 @@ type Input = {
     config: Config;
 }
 
+type SessionWallet = {
+    pubKey: PublicKey,
+    amount: number
+}
+
 export function LayoutComponent({ config }: Input) {
+    const [sessionWallet, setSessionWallet] = useState<SessionWallet | null>(null)
     const { publicKey } = useWallet();
 
     const solService = new SolanaService(config);
@@ -23,14 +30,23 @@ export function LayoutComponent({ config }: Input) {
 
         console.log("info: ", info);
 
-        const sol = await solService.getSolBalance(pubKey);
-
-        console.log("SOL: " + sol);
+        return await solService.getSolBalance(pubKey);
     }
 
     useEffect(() => {
+        const pubKey = config.getPublicKey();
 
-    }, [])
+        if (!pubKey) return;
+
+        getTokensBalance(pubKey)
+            .then((data) => {
+                setSessionWallet({
+                    pubKey: config.getPublicKey(),
+                    amount: data
+                });
+            }).catch((err) => console.warn(err))
+
+    }, [config])
 
     useEffect(() => {
         if (!publicKey) return;
@@ -45,11 +61,18 @@ export function LayoutComponent({ config }: Input) {
         <div className="content">
             {config && <HeaderMenu config={config} ></HeaderMenu>}
             <main>
-                this is the main
+                {sessionWallet && (
+                    <div className="upper">
+                        Your Site wallet: {sessionWallet.pubKey.toBase58()}
+                        <br />
+                        Amount: {sessionWallet.amount}
+                    </div>
+                )}
             </main>
             <footer></footer>
             <DialogMessage />
             <Loading />
+            <DialogForm config={config} />
         </div>
     )
 }

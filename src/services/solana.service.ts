@@ -26,7 +26,6 @@ export class SolanaService {
 
     public constructor(private config: Config) {
         this.url = config.getUrl();
-        console.log(`(${config.environment}) Session pubKey:` + (this.config.getPublicKey()))
     }
 
     public async getAccountInfo(pubKey: PublicKey): Promise<AccountInfo<Buffer> | null> {
@@ -83,7 +82,6 @@ export class SolanaService {
     public async makeTransfer(wallet: Adapter, payer: PublicKey, receiver: PublicKey, amount: number) {
         const finalAmount = amount * LAMPORTS_PER_SOL;
         const connection = this.getConnection();
-
         const blockHash = await connection.getLatestBlockhash();
 
         const instructions = [
@@ -101,8 +99,14 @@ export class SolanaService {
         }).compileToV0Message();
 
         console.log("Message: ", message);
+        const transaction = new VersionedTransaction(message);
 
-        return wallet.sendTransaction(new VersionedTransaction(message), connection);
+        const signature = await wallet.sendTransaction(transaction, connection);
+
+        return {
+            signature,
+            exporerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+        }
     }
 
     public async getSolBalance(pubKey: PublicKey): Promise<number> {

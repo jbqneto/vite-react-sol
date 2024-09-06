@@ -1,7 +1,14 @@
 .content {
     width: 100%;
+    background-color: #141518;
+    color: #e1e1e1;
 }
 
+main {
+    .upper {
+        text-align: left;
+    }
+}
 
 .content {
     width: 100%;
@@ -17,7 +24,9 @@
     }
 
     main {
-        flex: 7
+        flex: 7;
+        width: 100%;
+        padding: 24px;
     }
 
     footer {

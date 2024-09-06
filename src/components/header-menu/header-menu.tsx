@@ -1,9 +1,10 @@
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletDisconnectButton, WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { PublicKey } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Menubar } from "primereact/menubar";
 import { useEffect, useState } from "react";
 import { Config } from "../../configuration/config";
+import { useLayout } from "../../providers/layout.provider";
 import { messageObserver } from "../../services/message.observer";
 import { SolanaService } from "../../services/solana.service";
 import './header-menu.scss';
@@ -25,19 +26,15 @@ const itemRenderer = (item: any) => (
 );
 
 export function HeaderMenu({ config }: Input) {
-    const { publicKey, wallet } = useWallet();
+    const { publicKey } = useWallet();
+    const { showModal } = useLayout();
+    const { connection } = useConnection();
     const [solanas, setSolanas] = useState(0);
     const solService = new SolanaService(config);
 
     const handleTransfer = async (evt: any) => {
         evt.preventDefault();
-
-        if (publicKey && wallet?.adapter) {
-            const transaction = await solService.makeTransfer(wallet.adapter, publicKey, config.getPublicKey(), 1);
-
-            console.log("transaction: ", transaction);
-        }
-
+        showModal(true);
     }
 
     const handleAskAirdrop = (evt: any) => {
@@ -52,7 +49,11 @@ export function HeaderMenu({ config }: Input) {
 
         solService.requestAirdrop(publicKey).then((data) => {
             console.log(`(${publicKey.toBase58()}) Airdrop received `, data);
-            loadFinancialData(publicKey);
+
+            setTimeout(() => {
+                loadFinancialData(publicKey);
+            }, 1000);
+
         }).catch((err) => messageObserver.sendError(err));
     };
 
@@ -102,11 +103,23 @@ export function HeaderMenu({ config }: Input) {
     }
 
     useEffect(() => {
+        if (!publicKey || !connection) return;
 
-        if (publicKey)
+        console.log("conn: ", connection);
+
+        connection.onAccountChange(
+            publicKey,
+            updatedAccountInfo => {
+                setSolanas(updatedAccountInfo.lamports / LAMPORTS_PER_SOL)
+            },
+            "confirmed",
+        );
+
+        if (publicKey) {
             loadFinancialData(publicKey);
+        }
 
-    }, [publicKey])
+    }, [publicKey, connection])
 
 
     return (

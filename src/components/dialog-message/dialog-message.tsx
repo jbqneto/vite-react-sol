@@ -1,19 +1,24 @@
 import { Message } from "primereact/message";
-import { useEffect, useState } from "react";
-import { AlertMessage, messageObserver } from "../../services/message.observer";
+import { useEffect } from "react";
+import { useLayout } from "../../providers/layout.provider";
+import { messageObserver } from "../../services/message.observer";
 import './dialog-message.scss';
 
 export function DialogMessage() {
-    const [message, setMessage] = useState<AlertMessage | null>(null);
+    const { message, showMessage, hideMessage } = useLayout();
 
     useEffect(() => {
         messageObserver.listen().subscribe((msg) => {
-            setMessage(msg);
+            if (msg) {
+                showMessage(msg.type, msg.message);
+            } else {
+                hideMessage();
+            }
         })
     }), [];
 
     function clearMessage(event: any): void {
-        setMessage(null);
+        hideMessage();
     }
 
     return (

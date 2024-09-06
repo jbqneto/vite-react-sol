@@ -4,7 +4,6 @@ import {
   WalletModalProvider
 } from '@solana/wallet-adapter-react-ui';
 import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
 import { PrimeReactProvider } from 'primereact/api';
 import { useMemo } from 'react';
 import './App.css';
@@ -16,11 +15,13 @@ import "primereact/resources/themes/bootstrap4-dark-blue/theme.css";
 import { Config } from './configuration/config';
 import { DevConfig } from './configuration/config.dev';
 import { ProdConfig } from './configuration/config.prod';
+import { LayoutProvider } from './providers/layout.provider';
 
 function App() {
   const network = WalletAdapterNetwork.Devnet;
   let config: Config;
 
+  //TODO: IN the future be able to change this on PROD
   if (import.meta.env.PROD) {
     config = new ProdConfig();
   } else {
@@ -28,7 +29,7 @@ function App() {
   }
 
   // You can also provide a custom RPC endpoint.
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => config.getUrl(), [network]);
 
   const wallets = useMemo(
     () => [
@@ -55,7 +56,9 @@ function App() {
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
           <WalletModalProvider>
-            <LayoutComponent config={config}></LayoutComponent>
+            <LayoutProvider>
+              <LayoutComponent config={config}></LayoutComponent>
+            </LayoutProvider>
           </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>

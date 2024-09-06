@@ -1,5 +1,9 @@
 import { Keypair, PublicKey } from "@solana/web3.js";
 
+export type InputConfig = {
+    config: Config
+}
+
 export interface Config {
     getUrl(): string;
     get environment(): string;

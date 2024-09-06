@@ -1,7 +1,9 @@
 import { Observable, Subject } from "rxjs";
 
+export type AlertMessageType = 'info' | 'success' | 'error';
+
 export type AlertMessage = {
-    type: 'info' | 'success' | 'error'
+    type: AlertMessageType;
     message: string;
 }
 
