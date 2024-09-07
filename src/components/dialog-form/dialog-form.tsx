@@ -55,7 +55,7 @@ export function DialogForm({ config }: InputConfig) {
         } catch (err) {
             const error = typeof err === 'string' ? err : 'Error on transaction';
 
-            console.warn("Error on transaction: ", JSON.stringify({ err }));
+            console.warn("Error on transaction: ", { err });
             showMessage('error', error);
         } finally {
             setLoading(false);
