@@ -26,7 +26,7 @@ const itemRenderer = (item: any) => (
 
 export function HeaderMenu({ config }: Input) {
     const { publicKey } = useWallet();
-    const { showModal, showMessage } = useLayout();
+    const { showModal, showMessage, setLoading } = useLayout();
     const { connection } = useConnection();
     const [solanas, setSolanas] = useState(0);
     const solService = new SolanaService(config);
@@ -39,22 +39,34 @@ export function HeaderMenu({ config }: Input) {
 
     const handleAskAirdrop = (evt: any) => {
         evt.preventDefault();
+        try {
+            setLoading(true);
 
-        if (!publicKey) {
-            return showMessage(
-                'error',
-                'First select your wallet'
-            )
+            if (!publicKey) {
+                return showMessage(
+                    'error',
+                    'First select your wallet'
+                )
+            }
+
+            solService.requestAirdrop(publicKey).then((data) => {
+                console.log(`(${publicKey.toBase58()}) Airdrop received `, data);
+
+                setTimeout(() => {
+                    loadFinancialData(publicKey);
+                }, 1000);
+
+            }).catch((err) => showMessage('error', JSON.stringify(err)));
+
+        } catch (err) {
+            const error = typeof err === 'string' ? err : JSON.stringify(err);
+
+            showMessage('error', error);
+
+        } finally {
+            setLoading(false);
         }
 
-        solService.requestAirdrop(publicKey).then((data) => {
-            console.log(`(${publicKey.toBase58()}) Airdrop received `, data);
-
-            setTimeout(() => {
-                loadFinancialData(publicKey);
-            }, 1000);
-
-        }).catch((err) => showMessage('error', JSON.stringify(err)));
     };
 
     const items = [
