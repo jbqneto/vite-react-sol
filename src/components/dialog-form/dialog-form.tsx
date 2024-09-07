@@ -43,10 +43,10 @@ export function DialogForm({ config }: InputConfig) {
         console.log("res from modal: ", res);
         if (!res || !wallet || !publicKey) return;
 
-        showModal(false);
-        setLoading(true);
-
         try {
+            showModal(false);
+            setLoading(true);
+
             const receiver = new PublicKey(res.recipient)
             const transaction = await solService.makeTransfer(wallet.adapter, publicKey, receiver, res.amount)
 
@@ -55,6 +55,7 @@ export function DialogForm({ config }: InputConfig) {
         } catch (err) {
             const error = typeof err === 'string' ? err : 'Error on transaction';
 
+            console.warn("Error on transaction: ", JSON.stringify({ err }));
             showMessage('error', error);
         } finally {
             setLoading(false);
