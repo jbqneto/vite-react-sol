@@ -26,7 +26,7 @@ const MIN_AMOUNT = 0.1;
 export function LayoutComponent({ config }: Input) {
     const [programWallet, setWallet] = useState<SessionWallet | null>(null)
     const { connection } = useConnection();
-    const { publicKey, wallet } = useWallet();
+    const { publicKey } = useWallet();
     const { showMessage, setLoading } = useLayout();
 
     const solService = new SolanaService(config);
@@ -94,7 +94,7 @@ export function LayoutComponent({ config }: Input) {
         return addr.substring(0, 4) + '...' + addr.substring(38);
     }
 
-    async function handleReturnSol(event: any): Promise<void> {
+    async function handleReturnSol(): Promise<void> {
         if (!publicKey || !programWallet) return;
 
         setLoading(true);

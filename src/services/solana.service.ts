@@ -105,6 +105,8 @@ export class SolanaService {
 
         const priorityTx = this.getPriorityTransaction(account.publicKey, lamports, receiver);
 
+        console.log("Priority tx: ", priorityTx);
+
         const signature = await sendAndConfirmTransaction(
             connection,
             transaction,

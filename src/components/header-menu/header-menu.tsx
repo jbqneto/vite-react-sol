@@ -12,7 +12,7 @@ type Input = {
     config: Config
 }
 
-const defaultAction = (evt: any) => {
+const defaultAction = () => {
 
 }
 
