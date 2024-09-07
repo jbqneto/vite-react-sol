@@ -1,5 +1,6 @@
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { Analytics } from '@vercel/analytics/react';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { useEffect, useState } from 'react';
@@ -140,6 +141,7 @@ export function LayoutComponent({ config }: Input) {
             <DialogMessage />
             <Loading />
             <DialogForm config={config} />
+            <Analytics />
         </div>
     )
 }
