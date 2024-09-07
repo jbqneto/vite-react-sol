@@ -141,6 +141,8 @@ export class SolanaService {
         console.log("Message: ", message);
         const baseTx = new VersionedTransaction(message);
 
+        console.log("wallet adapter: ", wallet);
+
         const signature = await wallet.sendTransaction(baseTx, connection);
 
         return {
