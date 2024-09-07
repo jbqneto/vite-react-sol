@@ -39,8 +39,9 @@ export function HeaderMenu({ config }: Input) {
 
     const handleAskAirdrop = (evt: any) => {
         evt.preventDefault();
+        setLoading(true);
+
         try {
-            setLoading(true);
 
             if (!publicKey) {
                 return showMessage(
@@ -56,15 +57,20 @@ export function HeaderMenu({ config }: Input) {
                     loadFinancialData(publicKey);
                 }, 1000);
 
-            }).catch((err) => showMessage('error', JSON.stringify(err)));
+            }).catch((err) => {
+                console.warn("Error requesting airdrop", { err });
+                showMessage('error', "Could not retrieve airdrop");
+            }).finally(() => {
+                setLoading(false);
+            });
 
         } catch (err) {
-            const error = typeof err === 'string' ? err : JSON.stringify(err);
+            const error = typeof err === 'string' ? err : "Error requesting airdrop";
+
+            console.warn("Error getting airdrop", { err });
 
             showMessage('error', error);
 
-        } finally {
-            setLoading(false);
         }
 
     };

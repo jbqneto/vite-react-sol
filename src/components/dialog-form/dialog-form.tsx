@@ -44,8 +44,8 @@ export function DialogForm({ config }: InputConfig) {
         if (!res || !wallet || !publicKey) return;
 
         try {
-            showModal(false);
             setLoading(true);
+            showModal(false);
 
             const receiver = new PublicKey(res.recipient)
             const transaction = await solService.makeTransfer(wallet.adapter, publicKey, receiver, res.amount)
