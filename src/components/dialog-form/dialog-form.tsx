@@ -1,17 +1,18 @@
+import { useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { MutableRefObject, useState } from "react";
 import { InputConfig } from "../../configuration/config";
 import { useLayout } from "../../providers/layout.provider";
-import InputFormWallet from "../form-wallet/form-wallet";
+import { SolanaService } from "../../services/solana.service";
+import InputFormWallet, { TransactionFormData } from "../form-wallet/form-wallet";
 
 export function DialogForm({ config }: InputConfig) {
-    const { showModal, isModalOpen } = useLayout();
+    const { publicKey, wallet } = useWallet();
+    const { showModal, isModalOpen, showMessage, setLoading } = useLayout();
     const [formRef, setFormRef] = useState<MutableRefObject<any> | null>(null);
-
-    const handleDialogClose = () => {
-        showModal(false);
-    }
+    const solService = new SolanaService(config);
 
     const onCancelClick = (evt: any) => {
         evt.preventDefault();
@@ -29,10 +30,36 @@ export function DialogForm({ config }: InputConfig) {
         }
     }
 
-    const onSubmit = (res: string) => {
-        console.log("res: ", res);
+    const openTransactionSite = (url: string) => {
+        navigator.clipboard.writeText(url);
+
+        return () => {
+            navigator.clipboard.writeText(url);
+            window.open(url, '_blank');
+        }
+    }
+
+    const onSubmit = async (res: TransactionFormData) => {
+        console.log("res from modal: ", res);
+        if (!res || !wallet || !publicKey) return;
 
         showModal(false);
+        setLoading(true);
+
+        try {
+            const receiver = new PublicKey(res.recipient)
+            const transaction = await solService.makeTransfer(wallet.adapter, publicKey, receiver, res.amount)
+
+            showMessage('success', 'Transaction done successfully: ', openTransactionSite(transaction.explorerUrl));
+
+        } catch (err) {
+            const error = typeof err === 'string' ? err : 'Error on transaction';
+
+            showMessage('error', error);
+        } finally {
+            setLoading(false);
+        }
+
     }
 
     const onFormInit = (ref: MutableRefObject<any>) => {

@@ -5,17 +5,18 @@ import {
 } from '@solana/wallet-adapter-react-ui';
 import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { PrimeReactProvider } from 'primereact/api';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import './App.css';
 import { LayoutComponent } from './components/layout/layout';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import 'primeicons/primeicons.css';
-import "primereact/resources/themes/bootstrap4-dark-blue/theme.css";
 import { Config } from './configuration/config';
 import { DevConfig } from './configuration/config.dev';
-import { ProdConfig } from './configuration/config.prod';
 import { LayoutProvider } from './providers/layout.provider';
+import { configObserver } from './services/config.observer';
+
+import "primereact/resources/themes/lara-dark-teal/theme.css";
 
 function App() {
   const network = WalletAdapterNetwork.Devnet;
@@ -23,7 +24,7 @@ function App() {
 
   //TODO: IN the future be able to change this on PROD
   if (import.meta.env.PROD) {
-    config = new ProdConfig();
+    config = new DevConfig();
   } else {
     config = new DevConfig();
   }
@@ -33,23 +34,19 @@ function App() {
 
   const wallets = useMemo(
     () => [
-      /**
-       * Wallets that implement either of these standards will be available automatically.
-       *
-       *   - Solana Mobile Stack Mobile Wallet Adapter Protocol
-       *     (https://github.com/solana-mobile/mobile-wallet-adapter)
-       *   - Solana Wallet Standard
-       *     (https://github.com/anza-xyz/wallet-standard)
-       *
-       * If you wish to support a wallet that supports neither of those standards,
-       * instantiate its legacy wallet adapter here. Common legacy adapters can be found
-       * in the npm package `@solana/wallet-adapter-wallets`.
-       */
       new UnsafeBurnerWalletAdapter(),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [network]
   );
+
+  useEffect(() => {
+
+    configObserver.onEnvChange().subscribe((env) => {
+      console.log(`(${network}) Env change is not yet implemented: ${env}`);
+    });
+
+  }, [])
 
   return (
     <PrimeReactProvider>

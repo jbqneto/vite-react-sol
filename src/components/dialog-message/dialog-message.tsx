@@ -1,23 +1,15 @@
 import { Message } from "primereact/message";
-import { useEffect } from "react";
 import { useLayout } from "../../providers/layout.provider";
-import { messageObserver } from "../../services/message.observer";
 import './dialog-message.scss';
 
 export function DialogMessage() {
-    const { message, showMessage, hideMessage } = useLayout();
-
-    useEffect(() => {
-        messageObserver.listen().subscribe((msg) => {
-            if (msg) {
-                showMessage(msg.type, msg.message);
-            } else {
-                hideMessage();
-            }
-        })
-    }), [];
+    const { message, hideMessage } = useLayout();
 
     function clearMessage(event: any): void {
+        if (typeof message?.action === 'function') {
+            message.action();
+        }
+
         hideMessage();
     }
 

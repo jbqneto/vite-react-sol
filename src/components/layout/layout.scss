@@ -7,6 +7,19 @@
 main {
     .upper {
         text-align: left;
+        padding: 0.5em;
+    }
+}
+
+.upper {
+
+    span.info {
+        display: flex;
+        cursor: pointer;
+    }
+
+    button {
+        margin-top: 8px;
     }
 }
 

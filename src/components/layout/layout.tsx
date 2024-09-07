@@ -1,7 +1,10 @@
-import { useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { Button } from 'primereact/button';
+import { Card } from 'primereact/card';
 import { useEffect, useState } from 'react';
 import { Config } from '../../configuration/config';
+import { useLayout } from '../../providers/layout.provider';
 import { SolanaService } from '../../services/solana.service';
 import { DialogForm } from '../dialog-form/dialog-form';
 import { DialogMessage } from '../dialog-message/dialog-message';
@@ -18,9 +21,13 @@ type SessionWallet = {
     amount: number
 }
 
+const MIN_AMOUNT = 0.1;
+
 export function LayoutComponent({ config }: Input) {
-    const [sessionWallet, setSessionWallet] = useState<SessionWallet | null>(null)
-    const { publicKey } = useWallet();
+    const [programWallet, setWallet] = useState<SessionWallet | null>(null)
+    const { connection } = useConnection();
+    const { publicKey, wallet } = useWallet();
+    const { showMessage, setLoading } = useLayout();
 
     const solService = new SolanaService(config);
 
@@ -33,40 +40,100 @@ export function LayoutComponent({ config }: Input) {
         return await solService.getSolBalance(pubKey);
     }
 
-    useEffect(() => {
-        const pubKey = config.getPublicKey();
-
-        if (!pubKey) return;
-
+    const loadProgramWallet = (pubKey: PublicKey) => {
         getTokensBalance(pubKey)
             .then((data) => {
-                setSessionWallet({
+                setWallet({
                     pubKey: config.getPublicKey(),
                     amount: data
                 });
             }).catch((err) => console.warn(err))
 
-    }, [config])
+    }
+
+    const updateProgramWalletBalance = (lamports: number) => {
+        setWallet({
+            pubKey: config.getPublicKey(),
+            amount: lamports / LAMPORTS_PER_SOL
+        });
+    }
 
     useEffect(() => {
-        if (!publicKey) return;
+        const pubKey = config.getPublicKey();
 
-        if (publicKey) {
-            getTokensBalance(publicKey).catch((err) => console.error(err));
+        if (!pubKey) return;
+
+        loadProgramWallet(pubKey);
+
+    }, [config]);
+
+    useEffect(() => {
+        const wallet = config.getPublicKey();
+
+        if (!wallet) return;
+
+        connection.onAccountChange(
+            wallet,
+            updatedAccountInfo => {
+                console.log("updated Info: ", updatedAccountInfo)
+                updateProgramWalletBalance(updatedAccountInfo.lamports);
+            }
+        );
+
+    }, [connection])
+
+    const handleCopyAddress = (pubKey: NonNullable<PublicKey>) => {
+        navigator.clipboard.writeText(pubKey.toBase58());
+
+        showMessage('info', 'Address copied to clipboard')
+    }
+
+    const formatWallet = (pubKey: NonNullable<PublicKey>): string => {
+        const addr = pubKey.toBase58().toString();
+
+        return addr.substring(0, 4) + '...' + addr.substring(38);
+    }
+
+    async function handleReturnSol(event: any): Promise<void> {
+        if (!publicKey || !programWallet) return;
+
+        setLoading(true);
+
+        try {
+
+            const walletAmount = programWallet.amount;
+
+            if (walletAmount < MIN_AMOUNT)
+                throw "Your wallet must have at least " + MIN_AMOUNT;
+
+            let amount = walletAmount - (MIN_AMOUNT);
+
+            const res = await solService.transferFromPrivateWallet(publicKey, amount);
+
+            window.navigator.clipboard.writeText(res.explorerUrl);
+
+        } catch (error) {
+            showMessage('error', JSON.stringify(error));
+        } finally {
+            setLoading(false);
         }
-
-    }, [publicKey])
+    }
 
     return (
         <div className="content">
             {config && <HeaderMenu config={config} ></HeaderMenu>}
             <main>
-                {sessionWallet && (
-                    <div className="upper">
-                        Your Site wallet: {sessionWallet.pubKey.toBase58()}
-                        <br />
-                        Amount: {sessionWallet.amount}
-                    </div>
+                {programWallet && (
+                    <Card className="upper card">
+                        <span className='info' onClick={() => handleCopyAddress(programWallet.pubKey)}>
+                            Env: {config.environment} ({config.getUrl()})
+                            <br />
+                            Your Site wallet: {formatWallet(programWallet.pubKey)}
+                            <br />
+                            Sols: {programWallet.amount}
+                        </span>
+                        <Button onClick={handleReturnSol} label='Return sol' />
+                    </Card>
                 )}
             </main>
             <footer></footer>

@@ -5,7 +5,6 @@ import { Menubar } from "primereact/menubar";
 import { useEffect, useState } from "react";
 import { Config } from "../../configuration/config";
 import { useLayout } from "../../providers/layout.provider";
-import { messageObserver } from "../../services/message.observer";
 import { SolanaService } from "../../services/solana.service";
 import './header-menu.scss';
 
@@ -27,13 +26,14 @@ const itemRenderer = (item: any) => (
 
 export function HeaderMenu({ config }: Input) {
     const { publicKey } = useWallet();
-    const { showModal } = useLayout();
+    const { showModal, showMessage } = useLayout();
     const { connection } = useConnection();
     const [solanas, setSolanas] = useState(0);
     const solService = new SolanaService(config);
 
     const handleTransfer = async (evt: any) => {
         evt.preventDefault();
+        console.log("should show modal")
         showModal(true);
     }
 
@@ -41,10 +41,10 @@ export function HeaderMenu({ config }: Input) {
         evt.preventDefault();
 
         if (!publicKey) {
-            return messageObserver.sendMessage({
-                type: 'error',
-                message: 'First select your wallet'
-            })
+            return showMessage(
+                'error',
+                'First select your wallet'
+            )
         }
 
         solService.requestAirdrop(publicKey).then((data) => {
@@ -54,7 +54,7 @@ export function HeaderMenu({ config }: Input) {
                 loadFinancialData(publicKey);
             }, 1000);
 
-        }).catch((err) => messageObserver.sendError(err));
+        }).catch((err) => showMessage('error', JSON.stringify(err)));
     };
 
     const items = [
@@ -110,14 +110,12 @@ export function HeaderMenu({ config }: Input) {
         connection.onAccountChange(
             publicKey,
             updatedAccountInfo => {
+                console.log("updated account info", updatedAccountInfo);
                 setSolanas(updatedAccountInfo.lamports / LAMPORTS_PER_SOL)
-            },
-            "confirmed",
+            }
         );
 
-        if (publicKey) {
-            loadFinancialData(publicKey);
-        }
+        loadFinancialData(publicKey);
 
     }, [publicKey, connection])
 
@@ -135,7 +133,7 @@ export function HeaderMenu({ config }: Input) {
                 <div className="extra">
                 </div>
                 <div className="balance">
-                    SOls: {solanas}
+                    Sols: {solanas}
                 </div>
             </div>
         </header>

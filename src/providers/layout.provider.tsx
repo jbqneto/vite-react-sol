@@ -1,12 +1,12 @@
 import { createContext, useContext, useState } from "react";
-import { AlertMessage, AlertMessageType } from "../services/message.observer";
+import { AlertMessage, AlertMessageType } from "../model/main.model";
 
 export type ChildrenInput = {
     children: React.ReactElement
 }
 
 type ILayoutContext = {
-    showMessage: (type: AlertMessageType, msg: string) => void,
+    showMessage: (type: AlertMessageType, msg: string, onClick?: () => void) => void,
     setLoading: (_is: boolean) => void,
     hideMessage: () => void,
     showModal: (show: boolean) => void,
@@ -32,9 +32,8 @@ const LayoutProvider = ({ children }: ChildrenInput) => {
     const [message, setMessage] = useState<AlertMessage | null>(null);
     const [_showModal, setShowModal] = useState(false);
 
-
-    const showMessage = (type: AlertMessageType, text: string) => {
-        setMessage({ type, message: text });
+    const showMessage = (type: AlertMessageType, text: string, action?: () => void) => {
+        setMessage({ type, message: text, action });
     }
 
     const hideMessage = () => {

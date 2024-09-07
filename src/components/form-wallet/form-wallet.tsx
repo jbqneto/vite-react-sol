@@ -1,64 +1,53 @@
 import { useConnection, useWallet } from "@solana/wallet-adapter-react"
-import { PublicKey } from "@solana/web3.js"
 import { InputNumber } from "primereact/inputnumber"
 import { InputText } from "primereact/inputtext"
 import { MutableRefObject, useEffect, useRef, useState } from "react"
 import { InputConfig } from "../../configuration/config"
-import { SolanaService } from "../../services/solana.service"
 
-import { useLayout } from "../../providers/layout.provider"
 import './form-wallet.scss'
 
-type FormSubmit = {
-    toPubKey: PublicKey;
+export type TransactionFormData = {
+    recipient: string;
     amount: number;
 }
 
 type Input = InputConfig & {
     onFormReady: (ref: MutableRefObject<any>) => void;
-    onSubmit: (response: any) => void,
+    onSubmit: (response: TransactionFormData) => void,
 }
 
 export default function InputFormWallet({ config, onFormReady, onSubmit }: Input) {
     const { connection } = useConnection()
     const { publicKey, wallet } = useWallet();
     const formRef = useRef(null);
-    const { setLoading, showMessage } = useLayout();
-
-    const [transactionLink, setTransactionLink] = useState<string>("")
-    const solService = new SolanaService(config);
+    const [error, setError] = useState("");
 
     const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
         evt.preventDefault();
 
-        console.log({ target: evt.currentTarget });
-
-        const form = new FormData(evt.currentTarget);
-        const recipientData = form.get("recipient");
-        const amountData = form.get("amount");
-
-        if (!connection || !publicKey || !wallet) {
-            console.error("Connection or publickey is not available.")
-            return;
-        }
-
-        if (!amountData || !recipientData) {
-            showMessage('error', 'Inform the receiver address and amount');
-            return;
-        }
-
-        const recipient = recipientData.valueOf().toString();
-        const amount = recipient.valueOf().toString();
-
         try {
-            const receiver = new PublicKey(recipientData)
-            const res = await solService.makeTransfer(wallet.adapter, publicKey, receiver, parseFloat(amountData))
 
-            setTransactionLink(res.exporerUrl);
-            onSubmit(res);
+            const form = new FormData(evt.currentTarget);
+            const recipient = form.get("recipient");
+            const amount = form.get("amount");
 
-        } catch (error) {
-            console.error("Transaction failed:", error)
+            if (!connection || !publicKey || !wallet) {
+                throw "Connection or publickey is not available.";
+            }
+
+            if (!amount || !recipient) {
+                throw 'Inform the receiver address and amount';
+            }
+
+            onSubmit({
+                amount: parseFloat(amount.toString()),
+                recipient: recipient.toString()
+            });
+
+        } catch (err) {
+            console.warn("Error submiting data: ", { err });
+            const error = typeof err === 'string' ? err : 'Error sending transaction';
+            setError(error);
         }
     }
 
@@ -82,14 +71,13 @@ export default function InputFormWallet({ config, onFormReady, onSubmit }: Input
                     <InputNumber name="amount" minFractionDigits={2} maxFractionDigits={5} placeholder="Sol amount" />
                     <span className="p-inputgroup-addon">Sol</span>
                 </div>
-                {transactionLink && (
-                    <a
-                        href={transactionLink}
-                        target="_blank"
-                        className={"transaction-link"}
-                    >
-                        Check transaction at Solana Explorer
-                    </a>
+                {error !== '' && (
+                    <p>
+                        <span className="error"
+                        >
+                            {error}
+                        </span>
+                    </p>
 
                 )}
             </form>

@@ -1,6 +1,7 @@
 import { Adapter } from "@solana/wallet-adapter-base";
 import {
     AccountInfo,
+    ComputeBudgetProgram,
     Connection,
     Keypair,
     LAMPORTS_PER_SOL,
@@ -14,12 +15,13 @@ import {
     sendAndConfirmTransaction
 } from "@solana/web3.js";
 import { Config } from "../configuration/config";
-import { loadObserver } from "./loading.observer";
 
 type AirdropResponse = {
     response: RpcResponseAndContext<SignatureResult>,
     amount: number;
-}
+};
+
+const PRIORITY_RATE = 100;
 
 export class SolanaService {
     private readonly url: string;
@@ -41,7 +43,6 @@ export class SolanaService {
     public async requestAirdrop(publicKey: PublicKey): Promise<AirdropResponse> {
         console.log("ask airdrop for: ", publicKey.toBase58());
         try {
-            loadObserver.startLoading();
             const amount = 2 * LAMPORTS_PER_SOL;
 
             const connection = new Connection(
@@ -68,8 +69,6 @@ export class SolanaService {
             }
         } catch (error) {
             throw error;
-        } finally {
-            loadObserver.stopLoading();
         }
 
     }
@@ -77,6 +76,45 @@ export class SolanaService {
     private getConnection() {
         return new Connection(
             this.url);
+    }
+
+    private getPriorityTransaction(from: PublicKey, lamports: number, to: PublicKey): Transaction {
+        return new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey: from,
+                toPubkey: to,
+                lamports,
+            })
+        ).add(ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: PRIORITY_RATE
+        }));
+    }
+
+    public async transferFromPrivateWallet(receiver: PublicKey, amount: number) {
+        const account = this.config.getKeyPair();
+        const connection = this.getConnection();
+        const lamports = LAMPORTS_PER_SOL * amount;
+
+        const transaction = new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey: account.publicKey,
+                toPubkey: receiver,
+                lamports,
+            })
+        );
+
+        const priorityTx = this.getPriorityTransaction(account.publicKey, lamports, receiver);
+
+        const signature = await sendAndConfirmTransaction(
+            connection,
+            transaction,
+            [account]
+        );
+
+        return {
+            signature,
+            explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+        };
     }
 
     public async makeTransfer(wallet: Adapter, payer: PublicKey, receiver: PublicKey, amount: number) {
@@ -99,13 +137,13 @@ export class SolanaService {
         }).compileToV0Message();
 
         console.log("Message: ", message);
-        const transaction = new VersionedTransaction(message);
+        const baseTx = new VersionedTransaction(message);
 
-        const signature = await wallet.sendTransaction(transaction, connection);
+        const signature = await wallet.sendTransaction(baseTx, connection);
 
         return {
             signature,
-            exporerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+            explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
         }
     }
 
@@ -138,6 +176,7 @@ export class SolanaService {
         const connection = this.getConnection();
 
         const lamportsToSend = amount * LAMPORTS_PER_SOL;
+        const blockHash = await connection.getLatestBlockhash();
 
         const transferTransaction = new Transaction().add(
             SystemProgram.transfer({
@@ -146,6 +185,9 @@ export class SolanaService {
                 lamports: lamportsToSend,
             }),
         );
+
+        transferTransaction.feePayer = fromPubKey;
+        transferTransaction.recentBlockhash = blockHash.blockhash;
 
         const trans = await sendAndConfirmTransaction(connection, transferTransaction, [
             keyPair,
