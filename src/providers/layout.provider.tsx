@@ -17,11 +17,11 @@ type ILayoutContext = {
 }
 
 const LayoutContext = createContext<ILayoutContext>({
-    showMessage: (type: AlertMessageType, msg: string) => { },
+    showMessage: (type: AlertMessageType, msg: string) => { console.log(type, msg) },
     setLoading: (_is: boolean) => { },
     hideMessage: () => { },
-    showModal: (show: boolean) => { },
-    closedModal: (data: any) => { },
+    showModal: (show: boolean) => { console.log(show) },
+    closedModal: () => { },
     isModalOpen: false,
     isLoading: false,
     message: null,
@@ -52,7 +52,7 @@ const LayoutProvider = ({ children }: ChildrenInput) => {
         setShowModal(show);
     }
 
-    const closedModal = (data: any) => {
+    const closedModal = () => {
         setShowModal(false);
     }
 

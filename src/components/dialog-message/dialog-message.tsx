@@ -5,7 +5,7 @@ import './dialog-message.scss';
 export function DialogMessage() {
     const { message, hideMessage } = useLayout();
 
-    function clearMessage(event: any): void {
+    function clearMessage(): void {
         if (typeof message?.action === 'function') {
             message.action();
         }

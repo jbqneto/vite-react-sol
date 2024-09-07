@@ -16,7 +16,7 @@ type Input = InputConfig & {
     onSubmit: (response: TransactionFormData) => void,
 }
 
-export default function InputFormWallet({ config, onFormReady, onSubmit }: Input) {
+export default function InputFormWallet({ onFormReady, onSubmit }: Input) {
     const { connection } = useConnection()
     const { publicKey, wallet } = useWallet();
     const formRef = useRef(null);
